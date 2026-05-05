@@ -97,6 +97,10 @@ def ask_gemini_with_strict_quota(combined_text, file_list):
                 delay = base_delay * (2 ** attempt)
                 print(f"  !! Rate Limit発生。{delay}秒待機してリトライします... ({attempt+1}/{max_retries})")
                 time.sleep(delay)
+            elif "503" in err_msg or "UNAVAILABLE" in err_msg:
+                delay = base_delay * (2 ** attempt)
+                print(f"  !! サーバー混雑(503)。{delay}秒待機してリトライします... ({attempt+1}/{max_retries})")
+                time.sleep(delay)
             else:
                 # エラーメッセージに非ASCII文字が含まれても print で落ちないように repr() を使用
                 print(f"  !! APIエラー: {repr(e)}")
