@@ -22,8 +22,8 @@ if not API_KEY or not TARGET_DIR:
 # クライアント初期化
 client = genai.Client(api_key=API_KEY)
 
-# 流量制御用：15秒に1回（1分間に最大4リクエストの安全圏）
-REQUEST_INTERVAL = 15 
+# 流量制御用：30秒に1回（1分間に最大2リクエストの安全圏）
+REQUEST_INTERVAL = 30
 
 def extract_zendesk_content(file_path):
     """Zendesk HTMLから本文を抽出（UTF-8固定）"""
@@ -86,15 +86,20 @@ def ask_gemini_with_strict_quota(combined_text, file_list):
     """
 
     max_retries = 5
-    base_delay = 30 
+    base_delay = 60
+    rate_limited = False
 
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(model=MODEL_ID, contents=prompt)
+            if rate_limited:
+                print(f"  .. リトライ成功。クールダウン {REQUEST_INTERVAL * 2}秒待機します")
+                time.sleep(REQUEST_INTERVAL * 2)
             return response.text
         except Exception as e:
             err_msg = str(e)
             if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                rate_limited = True
                 delay = base_delay * (2 ** attempt)
                 print(f"  !! Rate Limit発生。{delay}秒待機してリトライします... ({attempt+1}/{max_retries})")
                 time.sleep(delay)
