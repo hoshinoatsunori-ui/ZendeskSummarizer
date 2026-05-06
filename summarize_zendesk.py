@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import sys
 from bs4 import BeautifulSoup
@@ -117,6 +118,17 @@ def run_process():
 
     for root, _, files in os.walk(TARGET_DIR):
         if "summary.md" in files:
+            continue
+
+        if "ticket.json" in files:
+            try:
+                with open(os.path.join(root, "ticket.json"), "r", encoding="utf-8") as f:
+                    ticket_data = json.load(f)
+                if ticket_data.get("status") != "解決済み":
+                    continue
+            except Exception:
+                continue
+        else:
             continue
 
         html_files = [f for f in files if f.lower().endswith('.html')]
